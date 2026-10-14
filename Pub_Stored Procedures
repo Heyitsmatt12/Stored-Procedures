@@ -1,0 +1,44 @@
+SE pubs;
+GO
+
+-- ============================================
+-- Stored Procedure: usp_GetPublisherSales
+-- Purpose: Analyze book sales by publisher
+-- ============================================
+
+CREATE OR ALTER PROCEDURE dbo.usp_GetPublisherSales
+    @PublisherID CHAR(4)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT
+        p.pub_id AS PublisherID,
+        p.pub_name AS PublisherName,
+        t.title AS BookTitle,
+        t.price AS BookPrice,
+        COALESCE(SUM(s.qty), 0) AS TotalQuantitySold,
+        COALESCE(
+            SUM(s.qty * t.price), 0
+        ) AS EstimatedRevenue
+
+    FROM dbo.publishers AS p
+
+    INNER JOIN dbo.titles AS t
+        ON p.pub_id = t.pub_id
+
+    LEFT JOIN dbo.sales AS s
+        ON t.title_id = s.title_id
+
+    WHERE p.pub_id = @PublisherID
+
+    GROUP BY
+        p.pub_id,
+        p.pub_name,
+        t.title_id,
+        t.title,
+        t.price
+
+    ORDER BY TotalQuantitySold DESC;
+END;
+GO
